@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARK AI | ذكاء اصطناعي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* 1. التنسيق (CSS) */
+        body {
+            background-color: #0d0d0d;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 500px;
+            background: #1a1a1a;
+            border: 1px solid #ffb300;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 179, 0, 0.2);
+        }
+
+        .chat-window {
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 15px;
+        }
+
+        /* تنسيق رسايل البوت والمستخدم */
+        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; line-height: 1.5; }
+        .user-msg { background: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .bot-msg { background: #ffb300; color: #000; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
+
+        .input-area { display: flex; gap: 10px; }
+        #userInput {
+            flex: 1;
+            background: #000;
+            border: 1px solid #444;
+            padding: 12px;
+            border-radius: 30px;
+            color: white;
+            outline: none;
+        }
+        #userInput:focus { border-color: #ffb300; }
+
+        #sendBtn {
+            background: #ffb300;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            color: #000;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #sendBtn:hover { transform: scale(1.1); box-shadow: 0 0 10px #ffb300; }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <h2 style="text-align: center; color: #ffb300; margin-top: 0;">
+            <i class="fas fa-robot"></i> STARK AI
+        </h2>
+        
+        <div id="chat-window" class="chat-window">
+            <div class="msg bot-msg">أهلاً يا بطل! أنا مساعدك الذكي، اسألني عن أي حاجة وهرد عليك فوراً.</div>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="اكتب سؤالك هنا...">
+            <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ ملاحظة: لازم تجيب API Key من Google AI Studio وتحطه هنا عشان يشتغل
+        const API_KEY = "AIzaSyDHEV94snAPUXjzZ2rTtkNSpoLf-wKFuT0"; 
+
+        const sendBtn = document.getElementById('sendBtn');
+        const userInput = document.getElementById('userInput');
+        const chatWindow = document.getElementById('chat-window');
+
+        async function askAI(question) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: question }] }]
+                })
+            });
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        async function handleMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // إضافة رسالة المستخدم للشاشة
+            chatWindow.innerHTML += `<div class="msg user-msg">${text}</div>`;
+            userInput.value = "";
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            // إضافة رسالة "جاري التفكير..."
+            const loadingId = "loading-" + Date.now();
+            chatWindow.innerHTML += `<div class="msg bot-msg" id="${loadingId}">... جاري التفكير</div>`;
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            try {
+                const aiResponse = await askAI(text);
+                document.getElementById(loadingId).innerText = aiResponse;
+            } catch (error) {
+                document.getElementById(loadingId).innerText = "للأسف حصل مشكلة في الاتصال، اتأكد من الـ API Key.";
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        sendBtn.onclick = handleMessage;
+        
+        // تشغيل الإرسال عند الضغط على Enter
+        userInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") handleMessage();
+        });
+    </script>
+</body>
+</html>
